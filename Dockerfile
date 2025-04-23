@@ -9,8 +9,5 @@ RUN npm install
 # Anwendungscode kopieren
 COPY . .
 
-# Port freigeben
-EXPOSE 4000
-
 # Anwendung starten
 CMD ["npm", "start"] 
