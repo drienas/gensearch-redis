@@ -202,6 +202,64 @@ app.get("/search", async (req, res) => {
   }
 });
 
+// Suchendpunkt für Kunden-ID
+app.get("/search/customerId", async (req, res) => {
+  try {
+    const search = req.query.search;
+    const mapped = req.query.mapped;
+
+    if (!search) {
+      return res.status(400).json({
+        success: false,
+        message: "Keine Kunden-ID in den Abfrageparametern gefunden",
+        hit: null,
+      });
+    }
+
+    const requestId = uuidv4();
+    const requestData = {
+      id: requestId,
+      type: "customerId",
+      search,
+      mapped,
+    };
+
+    // Anfrage an Redis senden
+    const result = await sendRequestAndWaitForResponse(requestData);
+
+    if (!result) {
+      return res.status(504).json({
+        success: false,
+        message: "Zeitüberschreitung bei der Anfrage",
+        hit: null,
+      });
+    }
+
+    // Wenn wir einen Treffer haben, formatieren wir die Antwort entsprechend
+    if (result.status === 200 && result.data) {
+      return res.status(200).json({
+        success: true,
+        hit: result.data,
+      });
+    }
+
+    // Wenn kein Treffer gefunden wurde
+    return res.status(404).json({
+      success: false,
+      message: "Kein Kunde mit dieser ID gefunden",
+      hit: null,
+    });
+  } catch (error) {
+    console.error("Fehler bei der Kunden-ID-Suche:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Interner Serverfehler",
+      error: error.message,
+      hit: null,
+    });
+  }
+});
+
 // Endpunkt zur Token-Generierung (nur mit Basic Auth zugänglich)
 app.post("/token", (req, res) => {
   // Nur Basic Auth erlauben (nicht Bearer Token)
